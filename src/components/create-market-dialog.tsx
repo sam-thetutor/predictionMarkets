@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import {
   Dialog,
@@ -13,20 +13,42 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { useCreateMarket } from "../hooks/useContract";
 
-export function CreateMarketDialog() {
+interface CreateMarketDialogProps {
+  onMarketCreated?: () => void;
+}
+
+export function CreateMarketDialog({ onMarketCreated }: CreateMarketDialogProps = {}) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [endDate, setEndDate] = useState("");
   
-  const { createMarket, isLoading, isSuccess } = useCreateMarket();
+  const { createMarket, isLoading, isSuccess, error } = useCreateMarket();
   
-  const handleSubmit = () => {
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setQuestion("");
+      setEndDate("");
+    }
+  }, [open]);
+  
+  // Handle success state
+  useEffect(() => {
+    if (isSuccess && open) {
+      setOpen(false);
+      // Notify parent component to refresh markets
+      if (onMarketCreated) {
+        onMarketCreated();
+      }
+    }
+  }, [isSuccess, open, onMarketCreated]);
+  
+  const handleSubmit = async () => {
     if (question && endDate) {
-      createMarket(question, new Date(endDate));
-      if (isSuccess) {
-        setOpen(false);
-        setQuestion("");
-        setEndDate("");
+      await createMarket(question, new Date(endDate));
+      //refresh the markets
+      if (onMarketCreated) {
+        onMarketCreated();
       }
     }
   };
@@ -36,7 +58,7 @@ export function CreateMarketDialog() {
       <DialogTrigger asChild>
         <Button>Create Prediction Market</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white">
         <DialogHeader>
           <DialogTitle>Create a new prediction market</DialogTitle>
           <DialogDescription>
@@ -68,6 +90,11 @@ export function CreateMarketDialog() {
               className="col-span-3"
             />
           </div>
+          {error && (
+            <div className="text-red-400 text-sm mt-2">
+              Error: {error.message}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleSubmit} disabled={isLoading}>

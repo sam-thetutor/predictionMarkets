@@ -1,13 +1,9 @@
 import { useCallback, useState, useEffect } from 'react';
 import { parseEther, formatEther } from 'viem';
-import { ethers } from 'ethers';
-import { PREDICTION_MARKET_ADDRESS, getEthersSigner, publicClient } from '../lib/web3';
+import { PREDICTION_MARKET_ADDRESS, getWalletClient, publicClient } from '../lib/web3';
 import type { Market, UserPosition } from '../types';
+import ABI from '../../contracts/contract.json';
 
-// ABI for the contract (simplified for brevity)
-const ABI = [
-  // Add your contract ABI here
-];
 
 // Custom hook for account connection
 export function useAccount() {
@@ -66,23 +62,42 @@ export function useAccount() {
     }
   };
 
-  return { address, isConnected, connect };
+  const disconnect = () => {
+    // Note: There's no standard way to disconnect in Web3
+    // We're just clearing our local state
+    setAddress(null);
+    setIsConnected(false);
+  };
+
+  return { address, isConnected, connect, disconnect };
 }
 
 export function useMarkets() {
   const [marketCount, setMarketCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
   useEffect(() => {
     const fetchMarketCount = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
         const count = await publicClient.readContract({
           address: PREDICTION_MARKET_ADDRESS,
           abi: ABI,
           functionName: 'getMarketCount',
         });
+        console.log("Number of prediction markets:", count);
         setMarketCount(Number(count));
-      } catch (error) {
-        console.error("Failed to fetch market count", error);
+      } catch (err) {
+        console.error("Failed to fetch market count", err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        
+        // If we can't connect to the blockchain, set a default state
+        setMarketCount(0);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -92,16 +107,42 @@ export function useMarkets() {
   const getMarkets = useCallback(async () => {
     if (marketCount === 0) return [];
     
-    const markets: Market[] = [];
-    for (let i = 0; i < marketCount; i++) {
-      // Fetch each market
-      // This is simplified - you'd need to implement proper fetching logic
+    try {
+      const markets: Market[] = [];
+      for (let i = 0; i < marketCount; i++) {
+        // Fetch each market usng the public client from viem
+
+        let market  = await publicClient.readContract({
+          address: PREDICTION_MARKET_ADDRESS,
+          abi: ABI,
+          functionName: 'getMarket',
+          args:[i]
+
+        })
+
+        console.log("market here :",market)
+
+        //convert the market to a Market object
+        const marketObject = {
+          id: i,
+          question: market[0],
+          endTime: market[1],
+          resolved: market[2],
+          outcome: market[3],
+          creator: market[4],
+          totalYesAmount: market[5],
+          totalNoAmount: market[6]
+        }
+        markets.push(marketObject)
+      }
+      return markets;
+    } catch (err) {
+      console.error("Failed to fetch markets", err);
+      return [];
     }
-    
-    return markets;
   }, [marketCount]);
 
-  return { marketCount, getMarkets };
+  return { marketCount, getMarkets, isLoading, error };
 }
 
 export function useCreateMarket() {
@@ -114,19 +155,27 @@ export function useCreateMarket() {
     setError(null);
     
     try {
-      const signer = await getEthersSigner();
-      const contract = new ethers.Contract(PREDICTION_MARKET_ADDRESS, ABI, signer);
+      const walletClient = await getWalletClient();
       
-      const tx = await contract.createMarket(
-        question, 
-        Math.floor(endTime.getTime() / 1000)
-      );
+      //get the account from the wallet client
+
+      let [address] = await walletClient.getAddresses();
+
+      const  hash  = await walletClient.writeContract({
+        address: PREDICTION_MARKET_ADDRESS,
+        abi: ABI,
+        functionName: 'createMarket',
+        args: [question, BigInt(Math.floor(endTime.getTime() / 1000))],
+        account: address as `0x${string}`
+      });
+      console.log("hash :",hash)
       
-      await tx.wait();
+      let dd = await publicClient.waitForTransactionReceipt({ hash });
+      console.log("dd :",dd)
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to create market", err);
-      setError(err instanceof Error ? err : new Error(String(err)));
+      setError(new Error("Error creating market. Try again later"));
       setIsSuccess(false);
     } finally {
       setIsLoading(false);
@@ -146,16 +195,17 @@ export function useTakePosition() {
     setError(null);
     
     try {
-      const signer = await getEthersSigner();
-      const contract = new ethers.Contract(PREDICTION_MARKET_ADDRESS, ABI, signer);
+      const walletClient = await getWalletClient();
       
-      const tx = await contract.takePosition(
-        marketId,
-        isYes,
-        { value: ethers.parseEther(amount) }
-      );
+      const { hash } = await walletClient.writeContract({
+        address: PREDICTION_MARKET_ADDRESS,
+        abi: ABI,
+        functionName: 'takePosition',
+        args: [BigInt(marketId), isYes],
+        value: parseEther(amount)
+      });
       
-      await tx.wait();
+      await publicClient.waitForTransactionReceipt({ hash });
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to take position", err);
@@ -179,11 +229,16 @@ export function useResolveMarket() {
     setError(null);
     
     try {
-      const signer = await getEthersSigner();
-      const contract = new ethers.Contract(PREDICTION_MARKET_ADDRESS, ABI, signer);
+      const walletClient = await getWalletClient();
       
-      const tx = await contract.resolveMarket(marketId, outcome);
-      await tx.wait();
+      const { hash } = await walletClient.writeContract({
+        address: PREDICTION_MARKET_ADDRESS,
+        abi: ABI,
+        functionName: 'resolveMarket',
+        args: [BigInt(marketId), outcome]
+      });
+      
+      await publicClient.waitForTransactionReceipt({ hash });
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to resolve market", err);
@@ -207,11 +262,16 @@ export function useClaimWinnings() {
     setError(null);
     
     try {
-      const signer = await getEthersSigner();
-      const contract = new ethers.Contract(PREDICTION_MARKET_ADDRESS, ABI, signer);
+      const walletClient = await getWalletClient();
       
-      const tx = await contract.claimWinnings(marketId);
-      await tx.wait();
+      const { hash } = await walletClient.writeContract({
+        address: PREDICTION_MARKET_ADDRESS,
+        abi: ABI,
+        functionName: 'claimWinnings',
+        args: [BigInt(marketId)]
+      });
+      
+      await publicClient.waitForTransactionReceipt({ hash });
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to claim winnings", err);

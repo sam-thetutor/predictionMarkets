@@ -1,5 +1,6 @@
 import { createPublicClient, http, createWalletClient, custom } from "viem";
 import { ethers } from "ethers";
+import {somniaTestnet} from "viem/chains"
 
 // Configure Somnia network
 export const somnia = {
@@ -12,17 +13,26 @@ export const somnia = {
     symbol: 'SOM',
   },
   rpcUrls: {
-    default: { http: ['https://rpc.somnia.network'] }, // Replace with actual RPC URL
+    // Add multiple RPC URLs for better reliability
+    default: { 
+      http: [
+        'https://dream-rpc.somnia.network/',
+      ] 
+    },
   },
   blockExplorers: {
-    default: { name: 'SomniaExplorer', url: 'https://explorer.somnia.network' }, // Replace with actual explorer URL
+    default: { name: 'SomniaExplorer', url: 'https://dream-rpc.somnia.network' }, // Replace with actual explorer URL
   },
 };
 
-// Create a public client for reading from the blockchain
+// Create a public client for reading from the blockchain with retry logic
 export const publicClient = createPublicClient({
-  chain: somnia,
-  transport: http()
+  chain: somniaTestnet,
+  transport: http(),
+  batch: {
+    multicall: true,
+  },
+  pollingInterval: 4000,
 });
 
 // Function to get a wallet client when needed
@@ -30,7 +40,7 @@ export const getWalletClient = async () => {
   if (!window.ethereum) throw new Error("No ethereum provider found");
   
   return createWalletClient({
-    chain: somnia,
+    chain: somniaTestnet,
     transport: custom(window.ethereum)
   });
 };
@@ -47,4 +57,4 @@ export const getEthersSigner = async () => {
   return provider.getSigner();
 };
 
-export const PREDICTION_MARKET_ADDRESS = '0x...'; // Replace with your deployed contract address 
+export const PREDICTION_MARKET_ADDRESS = '0x1fb54A455faFe7517D75Dd4B526E0dB37c7758BE'; // Replace with your deployed contract address 
