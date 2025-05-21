@@ -5,6 +5,12 @@
   text-align: center;
 }
 
+/* Override the center alignment for most content */
+.container {
+  text-align: left;
+}
+
+/* Keep logos centered */
 .logo {
   height: 6em;
   padding: 1.5em;
