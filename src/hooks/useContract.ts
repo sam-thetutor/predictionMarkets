@@ -116,12 +116,8 @@ export function useMarkets() {
           address: PREDICTION_MARKET_ADDRESS,
           abi: ABI,
           functionName: 'getMarket',
-          args:[i]
-
+          args:[Number(i)]
         })
-
-        console.log("market here :",market)
-
         //convert the market to a Market object
         const marketObject = {
           id: i,
@@ -150,7 +146,10 @@ export function useCreateMarket() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  const createMarket = useCallback(async (question: string, endTime: Date) => {
+  const createMarket = useCallback(async (question: string, endTime: Date, e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault(); // Prevent form submission
+    }
     setIsLoading(true);
     setError(null);
     
@@ -158,20 +157,18 @@ export function useCreateMarket() {
       const walletClient = await getWalletClient();
       
       //get the account from the wallet client
-
       let [address] = await walletClient.getAddresses();
 
-      const  hash  = await walletClient.writeContract({
+      const hash = await walletClient.writeContract({
         address: PREDICTION_MARKET_ADDRESS,
         abi: ABI,
         functionName: 'createMarket',
         args: [question, BigInt(Math.floor(endTime.getTime() / 1000))],
         account: address as `0x${string}`
       });
-      console.log("hash :",hash)
       
-      let dd = await publicClient.waitForTransactionReceipt({ hash });
-      console.log("dd :",dd)
+      let receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log("Transaction receipt:", receipt);
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to create market", err);

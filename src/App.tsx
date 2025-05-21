@@ -6,7 +6,17 @@ import { CreateMarketDialog } from './components/create-market-dialog';
 import { TakePositionDialog } from './components/take-position-dialog';
 import { ResolveMarketDialog } from './components/resolve-market-dialog';
 import { Button } from './components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Copy, Wallet, ChevronDown } from 'lucide-react';
+import { Routes, Route, Link } from 'react-router-dom';
+import { UserMarkets } from './pages/UserMarkets';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
 
 function App() {
   const { address, isConnected, connect, disconnect } = useAccount();
@@ -17,6 +27,8 @@ function App() {
   const [isYes, setIsYes] = useState(false);
   const [openPositionDialog, setOpenPositionDialog] = useState(false);
   const [openResolveDialog, setOpenResolveDialog] = useState(false);
+  const [balance, setBalance] = useState<string>("0");
+  const [copied, setCopied] = useState(false);
   
   const { claimWinnings } = useClaimWinnings();
 
@@ -53,6 +65,32 @@ function App() {
     const interval = setInterval(fetchMarkets, 30000);
     return () => clearInterval(interval);
   }, [isConnected, getMarkets]);
+
+  // Fetch user balance (simplified)
+  useEffect(() => {
+    if (isConnected && address) {
+      // This is a placeholder - you would need to implement actual balance fetching
+      const fetchBalance = async () => {
+        try {
+          // Replace with actual balance fetching logic
+          setBalance("1,250.00");
+        } catch (error) {
+          console.error("Failed to fetch balance:", error);
+          setBalance("0");
+        }
+      };
+      
+      fetchBalance();
+    }
+  }, [isConnected, address]);
+
+  const copyToClipboard = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleTakePosition = (marketId: number, isYesPosition: boolean) => {
     setSelectedMarket(marketId);
@@ -119,8 +157,8 @@ function App() {
               </div>
             </div>
             
-            <div className="md:w-1/2 bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
-              <div className="text-xl font-semibold mb-4">Featured Market Example</div>
+            <div className="md:w-1/2 bg-gray-800 p-16 rounded-xl shadow-2xl border border-gray-700">
+              {/* <div className="text-xl font-semibold mb-4">Featured Market Example</div> */}
               <div className="bg-gray-700 rounded-lg p-6 mb-4">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-lg font-medium">Will ETH reach $5000 by end of 2024?</h3>
@@ -167,67 +205,126 @@ function App() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="text-xl font-bold text-gray-900 dark:text-white">PredictSomnia</div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white">
+            <Link to="/">PredictSomnia</Link>
+          </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {address?.slice(0, 6)}...{address?.slice(-4)}
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={disconnect}
-              className="flex items-center gap-2"
-            >
-              <LogOut size={16} />
-              <span>Logout</span>
-            </Button>
-            <CreateMarketDialog onMarketCreated={refreshMarkets} />
+            <nav className="hidden md:flex items-center gap-4 mr-4">
+              <Link to="/" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                All Markets
+              </Link>
+              <Link to="/my-markets" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                My Markets
+              </Link>
+            </nav>
+            
+            <DropdownMenu classname="text-white">
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gray-800 text-white">
+                  <Wallet size={16} />
+                  <span>Wallet</span>
+                  <ChevronDown size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 text-white bg-gray-800">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Address</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={copyToClipboard}
+                      className="h-8 px-2"
+                    >
+                      <Copy size={14} />
+                    </Button>
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    
+                    {/* displa the shortened address */}
+                    {address?.slice(0, 14)}...{address?.slice(-4)}
+                  </div>
+                  {copied && (
+                    <span className="text-xs text-green-500 mt-1">Copied to clipboard!</span>
+                  )}
+                </div>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-2">
+                  <div className="text-sm font-medium">Balance</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {balance} SOM
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={disconnect} className="text-red-500 cursor-pointer">
+                  <LogOut size={16} className="mr-2" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* <CreateMarketDialog onMarketCreated={refreshMarkets} /> */}
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Prediction Markets</h1>
-
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-          </div>
-        ) : markets.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No prediction markets found</h3>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Create the first market to get started!</p>
-            <div className="mt-6">
-              <CreateMarketDialog onMarketCreated={refreshMarkets} />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {markets.map((market) => {
-              // This is simplified - you'd need to fetch user positions
-              const userPosition: UserPosition = {
-                yesAmount: 0n,
-                noAmount: 0n,
-              };
-              
-              return (
-                <MarketCard
-                  key={market.id}
-                  market={market}
-                  userPosition={userPosition}
-                  onTakePosition={handleTakePosition}
-                  onResolve={handleResolve}
-                  onClaim={handleClaim}
-                  isCreator={market.creator === address}
-                />
-              );
-            })}
-          </div>
-        )}
-      </main>
+      <Routes>
+        <Route path="/" element={
+          <main className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Prediction Markets</h1>
+            
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              </div>
+            ) : markets.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No prediction markets found</h3>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">Create the first market to get started!</p>
+                <div className="mt-6">
+                  <CreateMarketDialog onMarketCreated={refreshMarkets} />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {markets.map((market) => {
+                  // This is simplified - you'd need to fetch user positions
+                  const userPosition: UserPosition = {
+                    yesAmount: 0n,
+                    noAmount: 0n,
+                  };
+                  
+                  return (
+                    <MarketCard
+                      key={market.id}
+                      market={market}
+                      userPosition={userPosition}
+                      onTakePosition={handleTakePosition}
+                      onResolve={handleResolve}
+                      onClaim={handleClaim}
+                      isCreator={market.creator === address}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </main>
+        } />
+        
+        <Route path="/my-markets" element={
+          <UserMarkets 
+            address={address} 
+            onTakePosition={handleTakePosition}
+            onResolve={handleResolve}
+            onClaim={handleClaim}
+          />
+        } />
+      </Routes>
 
       {selectedMarket !== null && (
         <>

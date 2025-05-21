@@ -112,14 +112,14 @@ export function MarketCard({
             className="w-1/2" 
             onClick={() => onTakePosition(market.id, true)}
           >
-            Bet YES
+             YES
           </Button>
           <Button 
             variant="outline" 
             className="w-1/2" 
             onClick={() => onTakePosition(market.id, false)}
           >
-            Bet NO
+            NO
           </Button>
         </div>
       )}

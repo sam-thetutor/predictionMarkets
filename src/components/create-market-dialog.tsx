@@ -47,16 +47,20 @@ export function CreateMarketDialog({ onMarketCreated }: CreateMarketDialogProps 
     if (question && endDate) {
       await createMarket(question, new Date(endDate));
       //refresh the markets
+      console.log("refreshing markets")
+      //wait for 5 seconds
+      await new Promise(resolve => setTimeout(resolve, 5000));
       if (onMarketCreated) {
         onMarketCreated();
       }
+     
     }
   };
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Create Prediction Market</Button>
+        <Button>Create</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white">
         <DialogHeader>
