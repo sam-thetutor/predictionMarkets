@@ -8,7 +8,7 @@ import { useAccount } from "../hooks/useContract";
 
 export default function MarketDetailsPage() {
   const { id } = useParams();
-  const { markets, isLoading } = useMarkets();
+  const { markets, isLoading, refresh } = useMarkets();
   const { address, isConnected } = useAccount();
 
   const [market, setMarket] = useState<Market | null>(null);
@@ -21,29 +21,30 @@ export default function MarketDetailsPage() {
   const [activeTab, setActiveTab] = useState<'holders' | 'comments'>('holders');
 
   useEffect(() => {
-    async function fetchMarket() {
-      setLoading(true);
-      const found = markets.find((m) => m.id === Number(id));
-      setMarket(found || null);
-      setLoading(false);
-      // Fetch user position for this market if user is connected
-      if (found && isConnected && address) {
-        try {
-          const positions = await getUserPositions(address);
-          const userMarket = positions.find((m) => m.id === Number(id));
-          setUserPosition({
-            yesAmount: userMarket?.userYesAmount ?? 0n,
-            noAmount: userMarket?.userNoAmount ?? 0n,
-          });
-        } catch (e) {
-          setUserPosition({ yesAmount: 0n, noAmount: 0n });
-        }
-      } else {
-        setUserPosition({ yesAmount: 0n, noAmount: 0n });
-      }
-    }
     fetchMarket();
   }, [id, markets, isConnected, address]);
+
+  const fetchMarket = async () => {
+    setLoading(true);
+    const found = markets.find((m) => m.id === Number(id));
+    setMarket(found || null);
+    setLoading(false);
+    // Fetch user position for this market if user is connected
+    if (found && isConnected && address) {
+      try {
+        const positions = await getUserPositions(address);
+        const userMarket = positions.find((m) => m.id === Number(id));
+        setUserPosition({
+          yesAmount: userMarket?.userYesAmount ?? 0n,
+          noAmount: userMarket?.userNoAmount ?? 0n,
+        });
+      } catch (e) {
+        setUserPosition({ yesAmount: 0n, noAmount: 0n });
+      }
+    } else {
+      setUserPosition({ yesAmount: 0n, noAmount: 0n });
+    }
+  };
 
   const handleAddComment = () => {
     if (newComment.trim() && address) {
@@ -52,7 +53,25 @@ export default function MarketDetailsPage() {
     }
   };
 
+  // const handleBet = async (isYes: boolean) => {
+  //   try {
+  //     // Assume placeBet is a function that handles the betting logic
+  //     await placeBet(market.id, isYes);
+  //     // Refresh market data after placing a bet
+  //     await refresh();
+  //     fetchMarket();
+  //   } catch (error) {
+  //     console.error("Error placing bet:", error);
+  //   }
+  // };
+
   const shortenAddress = (addr: string) => `${addr?.slice(0, 6)}...${addr.slice(-4)}`;
+
+  // Function to handle opening the modal
+  const openBetDialog = (isYes: boolean) => {
+    setIsYes(isYes);
+    setOpenDialog(true);
+  };
 
   return (
     <>
@@ -135,19 +154,13 @@ export default function MarketDetailsPage() {
             })()}
             <button
               className="w-full py-3 mb-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow transition text-lg"
-              onClick={() => {
-                setIsYes(true);
-                setOpenDialog(true);
-              }}
+              onClick={() => openBetDialog(true)}
             >
               Bet YES
             </button>
             <button
               className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg shadow transition text-lg"
-              onClick={() => {
-                setIsYes(false);
-                setOpenDialog(true);
-              }}
+              onClick={() => openBetDialog(false)}
             >
               Bet NO
             </button>
