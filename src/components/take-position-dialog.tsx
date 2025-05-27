@@ -29,6 +29,7 @@ export function TakePositionDialog({
   const { takePosition, isLoading, isSuccess } = useTakePosition();
   
   const handleSubmit = () => {
+    
     if (amount) {
       takePosition(marketId, isYes, amount);
       if (isSuccess) {
@@ -39,8 +40,8 @@ export function TakePositionDialog({
   };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onOpenChange} >
+      <DialogContent className="sm:max-w-[425px] text-white bg-gray-800">
         <DialogHeader>
           <DialogTitle>Place your prediction</DialogTitle>
           <DialogDescription>
@@ -48,9 +49,9 @@ export function TakePositionDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
+          <div className="flex flex-col items-start justify-start gap-4">
             <Label htmlFor="amount" className="text-right">
-              Amount (SOM)
+              Amount 
             </Label>
             <Input
               id="amount"
@@ -63,7 +64,7 @@ export function TakePositionDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+          <Button type="submit" onClick={handleSubmit} disabled={isLoading} className="bg-gray-800 text-white border cursor-pointer border-gray-700">
             {isLoading ? "Confirming..." : `Bet ${isYes ? "YES" : "NO"}`}
           </Button>
         </DialogFooter>

@@ -47,6 +47,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        somnia: "#1d2b3a",
       },
       borderRadius: {
         lg: "var(--radius)",

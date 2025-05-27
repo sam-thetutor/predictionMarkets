@@ -60,7 +60,7 @@ export function CreateMarketDialog({ onMarketCreated }: CreateMarketDialogProps 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Create</Button>
+        <Button className="bg-gray-800 text-white border cursor-pointer border-gray-700">Create</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white">
         <DialogHeader>

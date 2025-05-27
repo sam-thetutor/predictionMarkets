@@ -66,84 +66,38 @@ export function MarketCard({
   const noProbability = totalPool > 0 ? (Number(noPool) / totalPool) * 100 : 50;
 
   return (
-    <div className="bg-gray-700 rounded-lg p-6 mb-4">
+    <div className="bg-[#2c3e50] rounded-xl shadow-2xl border border-white p-6 flex flex-col gap-4">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-medium">{market.question}</h3>
-        {market.resolved ? (
-          <span className={`px-2 py-1 ${market.outcome === 1 ? 'bg-green-600' : 'bg-red-600'} text-xs rounded-full`}>
-            {market.outcome === 1 ? "Yes" : "No"}
-          </span>
-        ) : (
-          <span className="px-2 py-1 bg-gray-600 text-xs rounded-full">
-            {timeRemaining}
-          </span>
-        )}
+        <h3 className="text-lg font-bold text-white">{market.question}</h3>
+        <span className="px-2 py-1 bg-gray-600 text-white text-xs rounded-full">
+          {typeof market.endTime === "bigint"
+            ? `Ends ${formatDistanceToNow(new Date(Number(market.endTime) * 1000))}`
+            : `Ends ${formatDistanceToNow(new Date(market.endTime))}`
+          }
+        </span>
       </div>
-      
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-gray-800 p-3 rounded text-center">
-          <div className="text-green-400 font-bold">YES</div>
-          <div className="text-sm text-gray-400">{yesProbability.toFixed(1)}% probability</div>
-          {userPosition.yesAmount > 0n && (
-            <div className="mt-2 text-xs text-gray-400">
-              Your position: {formatEther(userPosition.yesAmount)} SOM
-            </div>
-          )}
-        </div>
-        <div className="bg-gray-800 p-3 rounded text-center">
-          <div className="text-red-400 font-bold">NO</div>
-          <div className="text-sm text-gray-400">{noProbability.toFixed(1)}% probability</div>
-          {userPosition.noAmount > 0n && (
-            <div className="mt-2 text-xs text-gray-400">
-              Your position: {formatEther(userPosition.noAmount)} SOM
-            </div>
-          )}
-        </div>
-      </div>
-      
+      {/* <div className="text-sm text-gray-300 mb-2">
+        Category: <span className="font-semibold">{market.category}</span>
+      </div> */}
       <div className="text-sm text-gray-400 mb-4">
-        Total pool: {(totalPool / 1e18).toFixed(3)} SOM
+        Total pool: {market.totalPool ? market.totalPool.toLocaleString() : "0"} SOM
       </div>
-      
-      {!isResolved && !isEnded && (
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            className="w-1/2" 
-            onClick={() => onTakePosition(market.id, true)}
-          >
-             YES
-          </Button>
-          <Button 
-            variant="outline" 
-            className="w-1/2" 
-            onClick={() => onTakePosition(market.id, false)}
-          >
-            NO
-          </Button>
-        </div>
-      )}
-      
-      {!isResolved && isEnded && isCreator && (
-        <Button 
-          className="w-full" 
-          onClick={() => onResolve(market.id)}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          className="w-1/2 bg-green-300 text-white cursor-pointer"
+          onClick={() => onTakePosition(true)}
         >
-          Resolve Market
+          YES
         </Button>
-      )}
-      
-      {isResolved && (
-        (userPosition.yesAmount > 0n && market.outcome === 1) || 
-        (userPosition.noAmount > 0n && market.outcome === 2) ? (
-          <Button 
-            className="w-full" 
-            onClick={() => onClaim(market.id)}
-          >
-            Claim Winnings
-          </Button>
-        ) : null
-      )}
+        <Button
+          variant="outline"
+          className="w-1/2 bg-red-300 text-white cursor-pointer"
+          onClick={() => onTakePosition(false)}
+        >
+          NO
+        </Button>
+      </div>
     </div>
   );
 } 

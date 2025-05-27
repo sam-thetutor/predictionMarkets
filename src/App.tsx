@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useMarkets, useTakePosition, useClaimWinnings } from './hooks/useContract';
-import type { Market, UserPosition } from './types';
-import { MarketCard } from './components/ui/market-card';
+import { useAccount, useMarkets, useClaimWinnings, getUserPositions } from './hooks/useContract';
+import type { Market} from './types';
+// import { MarketCard } from './components/ui/market-card';
 import { CreateMarketDialog } from './components/create-market-dialog';
 import { TakePositionDialog } from './components/take-position-dialog';
 import { ResolveMarketDialog } from './components/resolve-market-dialog';
 import { Button } from './components/ui/button';
 import { LogOut, Copy, Wallet, ChevronDown } from 'lucide-react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { UserMarkets } from './pages/UserMarkets';
 import {
   DropdownMenu,
@@ -17,6 +17,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
+import { UserPositionsSection } from "./components/UserPositionsSection";
+import { AllMarketsSection } from "./components/AllMarketsSection";
+import  AboutPage  from './pages/AboutPage';
+import MarketDetailsPage from './pages/MarketDetailsPage';
 
 function App() {
   const { address, isConnected, connect, disconnect } = useAccount();
@@ -29,11 +33,36 @@ function App() {
   const [openResolveDialog, setOpenResolveDialog] = useState(false);
   const [balance, setBalance] = useState<string>("0");
   const [copied, setCopied] = useState(false);
+  const [userPositions, setUserPositions] = useState<Market[]>([]);
   
   const { claimWinnings } = useClaimWinnings();
 
+  const categories = ["All", "Politics", "Sports", "Health", "Science"];
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const [searchTerm, setSearchTerm] = useState("");
+
   const refreshMarkets = useCallback(async () => {
     if (isConnected) {
+      setLoading(true);
+      try {
+        const marketsData = await getMarkets();
+        setMarkets(marketsData);
+        
+        if (address) {
+          const positions = await getUserPositions(address);
+          setUserPositions(positions);
+        }
+      } catch (error) {
+        console.error("Failed to fetch markets:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [ getMarkets, address]);
+
+  useEffect(() => {
+    const fetchMarkets = async () => {
       setLoading(true);
       try {
         const marketsData = await getMarkets();
@@ -43,28 +72,11 @@ function App() {
       } finally {
         setLoading(false);
       }
-    }
-  }, [isConnected, getMarkets]);
-
-  useEffect(() => {
-    const fetchMarkets = async () => {
-      if (isConnected) {
-        setLoading(true);
-        try {
-          const marketsData = await getMarkets();
-          setMarkets(marketsData);
-        } catch (error) {
-          console.error("Failed to fetch markets:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
     };
-
     fetchMarkets();
     const interval = setInterval(fetchMarkets, 30000);
     return () => clearInterval(interval);
-  }, [isConnected, getMarkets]);
+  }, [getMarkets]);
 
   // Fetch user balance (simplified)
   useEffect(() => {
@@ -83,6 +95,23 @@ function App() {
       fetchBalance();
     }
   }, [isConnected, address]);
+
+  // Add this effect to fetch user positions
+  useEffect(() => {
+    const fetchUserPositions = async () => {
+      if (isConnected && address) {
+        try {
+          // This would be a function that gets all markets where the user has a position
+          const positions = await getUserPositions(address);
+          setUserPositions(positions);
+        } catch (error) {
+          console.error("Failed to fetch user positions:", error);
+        }
+      }
+    };
+    
+    fetchUserPositions();
+  }, [address]);
 
   const copyToClipboard = () => {
     if (address) {
@@ -107,113 +136,46 @@ function App() {
     claimWinnings(marketId);
   };
 
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
-        <div className="container mx-auto px-4 py-16">
-          <header className="flex justify-between items-center mb-16">
-            <div className="text-2xl font-bold">PredictSomnia</div>
-            <Button 
-              onClick={connect}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              Connect Wallet
-            </Button>
-          </header>
-          
-          <main className="flex flex-col md:flex-row items-center gap-12 py-12">
-            <div className="md:w-1/2 space-y-6">
-              <h1 className="text-5xl font-bold leading-tight">
-                Predict the Future.<br />
-                <span className="text-indigo-400">Earn Rewards.</span>
-              </h1>
-              <p className="text-xl text-gray-300 max-w-md">
-                Create and participate in prediction markets on the Somnia blockchain. 
-                Bet on outcomes, resolve markets, and claim your winnings.
-              </p>
-              <div className="pt-4">
-                <Button 
-                  onClick={connect} 
-                  size="lg"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-lg px-8 py-6"
-                >
-                  Get Started
-                </Button>
-              </div>
-              
-              <div className="flex gap-8 pt-8 text-gray-400">
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl font-bold text-white">100%</span>
-                  <span>Decentralized</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl font-bold text-white">0%</span>
-                  <span>Platform Fees</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl font-bold text-white">24/7</span>
-                  <span>Market Access</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="md:w-1/2 bg-gray-800 p-16 rounded-xl shadow-2xl border border-gray-700">
-              {/* <div className="text-xl font-semibold mb-4">Featured Market Example</div> */}
-              <div className="bg-gray-700 rounded-lg p-6 mb-4">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-medium">Will ETH reach $5000 by end of 2024?</h3>
-                  <span className="px-2 py-1 bg-gray-600 text-xs rounded-full">Ends in 3 months</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-gray-800 p-3 rounded text-center">
-                    <div className="text-green-400 font-bold">YES</div>
-                    <div className="text-sm text-gray-400">65% probability</div>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded text-center">
-                    <div className="text-red-400 font-bold">NO</div>
-                    <div className="text-sm text-gray-400">35% probability</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-400 mb-4">Total pool: 1,250 SOM</div>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="w-1/2" disabled>Bet YES</Button>
-                  <Button variant="outline" className="w-1/2" disabled>Bet NO</Button>
-                </div>
-              </div>
-              <div className="text-center text-gray-400 text-sm">
-                Connect your wallet to start trading on real markets
-              </div>
-            </div>
-          </main>
-          
-          <footer className="mt-24 border-t border-gray-800 pt-8 text-gray-400 text-sm">
-            <div className="flex justify-between items-center">
-              <div>© 2024 PredictSomnia. All rights reserved.</div>
-              <div className="flex gap-4">
-                <a href="#" className="hover:text-white">Terms</a>
-                <a href="#" className="hover:text-white">Privacy</a>
-                <a href="#" className="hover:text-white">Docs</a>
-              </div>
-            </div>
-          </footer>
-        </div>
-      </div>
-    );
-  }
+  const navigate = useNavigate();
+
+  const now = Date.now();
+  const activeMarkets = markets.filter(
+    (m) =>
+      !m.resolved &&
+      (typeof m.endTime === "bigint"
+        ? Number(m.endTime) * 1000 > now
+        : new Date(m.endTime).getTime() > now)
+  );
+  const filteredMarkets = activeMarkets.filter((m) => {
+    const matchesCategory =
+      selectedCategory === "All" || m.category === selectedCategory;
+    const matchesSearch =
+      m.question.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="bg-card shadow">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="text-xl font-bold text-white">
             <Link to="/">PredictSomnia</Link>
+          </div>
+          <div className="flex-1 flex justify-center">
+            <input
+              type="text"
+              placeholder="Search markets..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center gap-4 mr-4">
-              <Link to="/" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+              <Link to="/all-markets" className="text-muted-foreground text-white hover:text-foreground">
                 All Markets
               </Link>
-              <Link to="/my-markets" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+              <Link to="/my-markets" className="text-muted-foreground text-white hover:text-foreground">
                 My Markets
               </Link>
             </nav>
@@ -241,7 +203,7 @@ function App() {
                       <Copy size={14} />
                     </Button>
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                  <div className="text-sm text-gray-500 truncate">
                     
                     {/* displa the shortened address */}
                     {address?.slice(0, 14)}...{address?.slice(-4)}
@@ -253,7 +215,7 @@ function App() {
                 <DropdownMenuSeparator />
                 <div className="px-2 py-2">
                   <div className="text-sm font-medium">Balance</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-gray-500">
                     {balance} SOM
                   </div>
                 </div>
@@ -270,60 +232,98 @@ function App() {
         </div>
       </header>
 
+      <div className="bg-background border-b border-border">
+        <div className="container mx-auto px-4 py-2 flex gap-2 overflow-x-auto justify-center">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition
+                ${selectedCategory === cat
+                  ? "bg-primary text-white"
+                  : "bg-muted text-foreground hover:bg-primary/10"}
+              `}
+              onClick={() => setSelectedCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <Routes>
-        <Route path="/" element={
-          <main className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Prediction Markets</h1>
-            
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-              </div>
-            ) : markets.length === 0 ? (
-              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
-                <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No prediction markets found</h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">Create the first market to get started!</p>
-                <div className="mt-6">
-                  <CreateMarketDialog onMarketCreated={refreshMarkets} />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {markets.map((market) => {
-                  // This is simplified - you'd need to fetch user positions
-                  const userPosition: UserPosition = {
-                    yesAmount: 0n,
-                    noAmount: 0n,
-                  };
-                  
-                  return (
-                    <MarketCard
-                      key={market.id}
-                      market={market}
-                      userPosition={userPosition}
-                      onTakePosition={handleTakePosition}
-                      onResolve={handleResolve}
-                      onClaim={handleClaim}
-                      isCreator={market.creator === address}
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </main>
-        } />
+        <Route
+          path="/"
+          element={
+            <div className="container mx-auto px-4 py-8">
+              <AllMarketsSection
+                markets={filteredMarkets}
+                onTakePosition={handleTakePosition}
+                onResolve={handleResolve}
+                onClaim={handleClaim}
+                address={address}
+              />
+            </div>
+          }
+        />
         
-        <Route path="/my-markets" element={
-          <UserMarkets 
-            address={address} 
-            onTakePosition={handleTakePosition}
-            onResolve={handleResolve}
-            onClaim={handleClaim}
-          />
-        } />
+        <Route
+          path="/all-markets"
+          element={
+            <div className="container mx-auto px-4 py-8">
+              {/* <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Prediction Markets</h1> */}
+              
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : filteredMarkets.length === 0 ? (
+                <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
+                  <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No prediction markets found</h3>
+                  <p className="mt-2 text-gray-500 dark:text-gray-400">Create the first market to get started!</p>
+                  <div className="mt-6">
+                    <CreateMarketDialog onMarketCreated={refreshMarkets} />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <UserPositionsSection
+                    userPositions={userPositions}
+                    onTakePosition={handleTakePosition}
+                    onResolve={handleResolve}
+                    onClaim={handleClaim}
+                    address={address}
+                  />
+                  <AllMarketsSection
+                    markets={filteredMarkets}
+                    onTakePosition={handleTakePosition}
+                    onResolve={handleResolve}
+                    onClaim={handleClaim}
+                    address={address}
+                  />
+                </div>
+              )}
+            </div>
+          }
+        />
+        
+        <Route
+          path="/my-markets"
+          element={
+            <UserMarkets
+              address={address}
+              onTakePosition={handleTakePosition}
+              onResolve={handleResolve}
+              onClaim={handleClaim}
+            />
+          }
+        />
+        
+        <Route path="/market/:id" element={<MarketDetailsPage />} />
+        
+        <Route path="/about" element={<AboutPage />} />
       </Routes>
 
       {selectedMarket !== null && (

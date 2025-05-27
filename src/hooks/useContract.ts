@@ -193,16 +193,21 @@ export function useTakePosition() {
     
     try {
       const walletClient = await getWalletClient();
+
+      let [address] = await walletClient.getAddresses();
       
-      const { hash } = await walletClient.writeContract({
+      const  hash  = await walletClient.writeContract({
         address: PREDICTION_MARKET_ADDRESS,
         abi: ABI,
         functionName: 'takePosition',
         args: [BigInt(marketId), isYes],
-        value: parseEther(amount)
+        value: parseEther(amount),
+        account: address as `0x${string}`
       });
-      
-      await publicClient.waitForTransactionReceipt({ hash });
+
+      console.log("hash :",hash)
+      let receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log("Transaction receipt:", receipt);
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to take position", err);
@@ -280,4 +285,54 @@ export function useClaimWinnings() {
   }, []);
   
   return { claimWinnings, isLoading, isSuccess, error };
+}
+
+
+const getMarkets = async () => {
+  const markets = await publicClient.readContract({
+    address: PREDICTION_MARKET_ADDRESS,
+    abi: ABI,
+    functionName: 'getMarketCount'
+  })
+  return markets
+}
+
+
+export async function getUserPositions(userAddress: string): Promise<Market[]> {
+  try {
+    // First get all markets
+    const allMarkets = await getMarkets();
+    const marketsWithPositions: Market[] = [];
+    
+    // For each market, check if the user has a position
+    for (const market of allMarkets) {
+      try {
+        const userPosition = await publicClient.readContract({
+          address: PREDICTION_MARKET_ADDRESS,
+          abi: ABI,
+          functionName: 'getUserPosition',
+          args: [BigInt(market.id), userAddress]
+        }) as [bigint, bigint]; // [yesAmount, noAmount]
+        
+        const yesAmount = userPosition[0];
+        const noAmount = userPosition[1];
+        
+        // If user has a position in this market, add it to the result
+        if (yesAmount > 0n || noAmount > 0n) {
+          marketsWithPositions.push({
+            ...market,
+            userYesAmount: yesAmount,
+            userNoAmount: noAmount
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to get user position for market ${market.id}:`, error);
+      }
+    }
+    
+    return marketsWithPositions;
+  } catch (error) {
+    console.error("Failed to get user positions:", error);
+    return [];
+  }
 } 

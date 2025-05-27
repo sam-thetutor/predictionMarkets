@@ -1,21 +1,18 @@
 export interface Market {
   id: number;
   question: string;
-  endTime: Date;
+  endTime: bigint;
   resolved: boolean;
-  outcome: 0 | 1 | 2; // 0 = unresolved, 1 = yes, 2 = no
+  outcome: number;
   creator: string;
   totalYesAmount: bigint;
   totalNoAmount: bigint;
-}
+  userYesAmount?: bigint; // Optional field for user's position
+  userNoAmount?: bigint;  // Optional field for user's position
+} 
+
 
 export interface UserPosition {
   yesAmount: bigint;
   noAmount: bigint;
 }
-
-
-export interface MarketWithUserPosition extends Market {
-  userPosition: UserPosition;
-} 
-
