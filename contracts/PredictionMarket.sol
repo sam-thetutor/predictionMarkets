@@ -6,6 +6,8 @@ contract PredictionMarket {
     struct Market {
         uint256 id;
         string question;
+        string description;
+        string category;
         uint256 endTime;
         bool resolved;
         uint8 outcome; // 0 = unresolved, 1 = yes, 2 = no
@@ -33,7 +35,7 @@ contract PredictionMarket {
     event WinningsClaimed(uint256 indexed marketId, address indexed user, uint256 amount);
     
     // Create a new prediction market
-    function createMarket(string memory _question, uint256 _endTime) external returns (uint256) {
+    function createMarket(string memory _question, string memory _description, string memory _category, uint256 _endTime) external returns (uint256) {
         require(_endTime > block.timestamp, "End time must be in the future");
         
         uint256 marketId = marketIdCounter++;
@@ -41,6 +43,8 @@ contract PredictionMarket {
         markets[marketId] = Market({
             id: marketId,
             question: _question,
+            description: _description,
+            category: _category,
             endTime: _endTime,
             resolved: false,
             outcome: 0,
@@ -121,6 +125,8 @@ contract PredictionMarket {
     // Get market details
     function getMarket(uint256 _marketId) external view returns (
         string memory question,
+        string memory description,
+        string memory category,
         uint256 endTime,
         bool resolved,
         uint8 outcome,
@@ -131,6 +137,8 @@ contract PredictionMarket {
         Market storage market = markets[_marketId];
         return (
             market.question,
+            market.description,
+            market.category,
             market.endTime,
             market.resolved,
             market.outcome,

@@ -9,6 +9,8 @@ export interface Market {
   totalNoAmount: bigint;
   userYesAmount?: bigint; // Optional field for user's position
   userNoAmount?: bigint;  // Optional field for user's position
+  category: string;
+  description: string;
 } 
 
 

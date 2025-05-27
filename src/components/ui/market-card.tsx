@@ -80,7 +80,7 @@ export function MarketCard({
         Category: <span className="font-semibold">{market.category}</span>
       </div> */}
       <div className="text-sm text-gray-400 mb-4">
-        Total pool: {market.totalPool ? market.totalPool.toLocaleString() : "0"} SOM
+        Total pool: {totalPool ? totalPool/1e18 : "0"} SOM
       </div>
       <div className="flex gap-2">
         <Button

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useMarkets, useClaimWinnings, getUserPositions } from './hooks/useContract';
+import { useAccount, useMarkets, useClaimWinnings, getUserPositions, fetchMarkets } from './hooks/useContract';
 import type { Market} from './types';
 // import { MarketCard } from './components/ui/market-card';
 import { CreateMarketDialog } from './components/create-market-dialog';
@@ -24,8 +24,7 @@ import MarketDetailsPage from './pages/MarketDetailsPage';
 
 function App() {
   const { address, isConnected, connect, disconnect } = useAccount();
-  const { getMarkets } = useMarkets();
-  const [markets, setMarkets] = useState<Market[]>([]);
+  const { markets, isLoading, error, refresh } = useMarkets();
   const [loading, setLoading] = useState(true);
   const [selectedMarket, setSelectedMarket] = useState<number | null>(null);
   const [isYes, setIsYes] = useState(false);
@@ -43,40 +42,27 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const refreshMarkets = useCallback(async () => {
-    if (isConnected) {
-      setLoading(true);
-      try {
-        const marketsData = await getMarkets();
-        setMarkets(marketsData);
-        
-        if (address) {
-          const positions = await getUserPositions(address);
-          setUserPositions(positions);
-        }
-      } catch (error) {
-        console.error("Failed to fetch markets:", error);
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      await refresh();
+      if (address) {
+        const positions = await getUserPositions(address);
+        setUserPositions(positions);
       }
+    } catch (error) {
+      console.error("Failed to fetch markets:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [ getMarkets, address]);
+  }, [refresh, address]);
 
-  useEffect(() => {
-    const fetchMarkets = async () => {
-      setLoading(true);
-      try {
-        const marketsData = await getMarkets();
-        setMarkets(marketsData);
-      } catch (error) {
-        console.error("Failed to fetch markets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMarkets();
-    const interval = setInterval(fetchMarkets, 30000);
-    return () => clearInterval(interval);
-  }, [getMarkets]);
+  // useEffect(() => {
+  //   async function fetch() {
+  //     const data = await fetchMarkets();
+  //     setMarkets(data);
+  //   }
+  //   fetch();
+  // }, []);
 
   // Fetch user balance (simplified)
   useEffect(() => {
@@ -179,6 +165,9 @@ function App() {
                 My Markets
               </Link>
             </nav>
+            {isConnected && (
+              <CreateMarketDialog onMarketCreated={refreshMarkets} />
+            )}
             
             <DropdownMenu classname="text-white">
               <DropdownMenuTrigger asChild>
@@ -272,7 +261,7 @@ function App() {
             <div className="container mx-auto px-4 py-8">
               {/* <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Prediction Markets</h1> */}
               
-              {loading ? (
+              {isLoading ? (
                 <div className="flex justify-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
                 </div>

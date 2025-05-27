@@ -57,4 +57,4 @@ export const getEthersSigner = async () => {
   return provider.getSigner();
 };
 
-export const PREDICTION_MARKET_ADDRESS = '0x1fb54A455faFe7517D75Dd4B526E0dB37c7758BE'; // Replace with your deployed contract address 
+export const PREDICTION_MARKET_ADDRESS = '0xcE4e63B8F6657d5Df9D897ff65a0aE3e01f549A2'; // Replace with your deployed contract address 

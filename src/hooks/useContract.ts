@@ -4,6 +4,44 @@ import { PREDICTION_MARKET_ADDRESS, getWalletClient, publicClient } from '../lib
 import type { Market, UserPosition } from '../types';
 import ABI from '../../contracts/contract.json';
 
+// At the top of your file, outside the hook
+export async function fetchMarkets(): Promise<Market[]> {
+  try {
+    const count = await publicClient.readContract({
+      address: PREDICTION_MARKET_ADDRESS,
+      abi: ABI,
+      functionName: 'getMarketCount',
+    });
+    const marketCount = Number(count);
+    if (marketCount === 0) return [];
+    const markets: Market[] = [];
+    for (let i = 0; i < marketCount; i++) {
+      let market = await publicClient.readContract({
+        address: PREDICTION_MARKET_ADDRESS,
+        abi: ABI,
+        functionName: 'getMarket',
+        args: [i],
+      });
+      const marketObject = {
+        id: i,
+        question: market[0],
+        description: market[1],
+        category: market[2],
+        endTime: market[3],
+        resolved: market[4],
+        outcome: market[5],
+        creator: market[6],
+        totalYesAmount: market[7],
+        totalNoAmount: market[8],
+      };
+      markets.push(marketObject);
+    }
+    return markets;
+  } catch (err) {
+    console.error("Failed to fetch markets", err);
+    return [];
+  }
+}
 
 // Custom hook for account connection
 export function useAccount() {
@@ -73,111 +111,73 @@ export function useAccount() {
 }
 
 export function useMarkets() {
-  const [marketCount, setMarketCount] = useState(0);
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
-  useEffect(() => {
-    const fetchMarketCount = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const count = await publicClient.readContract({
-          address: PREDICTION_MARKET_ADDRESS,
-          abi: ABI,
-          functionName: 'getMarketCount',
-        });
-        console.log("Number of prediction markets:", count);
-        setMarketCount(Number(count));
-      } catch (err) {
-        console.error("Failed to fetch market count", err);
-        setError(err instanceof Error ? err : new Error(String(err)));
-        
-        // If we can't connect to the blockchain, set a default state
-        setMarketCount(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchMarketCount();
+
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchMarkets();
+      setMarkets(data);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const getMarkets = useCallback(async () => {
-    if (marketCount === 0) return [];
-    
-    try {
-      const markets: Market[] = [];
-      for (let i = 0; i < marketCount; i++) {
-        // Fetch each market usng the public client from viem
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-        let market  = await publicClient.readContract({
-          address: PREDICTION_MARKET_ADDRESS,
-          abi: ABI,
-          functionName: 'getMarket',
-          args:[Number(i)]
-        })
-        //convert the market to a Market object
-        const marketObject = {
-          id: i,
-          question: market[0],
-          endTime: market[1],
-          resolved: market[2],
-          outcome: market[3],
-          creator: market[4],
-          totalYesAmount: market[5],
-          totalNoAmount: market[6]
-        }
-        markets.push(marketObject)
-      }
-      return markets;
-    } catch (err) {
-      console.error("Failed to fetch markets", err);
-      return [];
-    }
-  }, [marketCount]);
-
-  return { marketCount, getMarkets, isLoading, error };
+  return { markets, isLoading, error, refresh };
 }
 
 export function useCreateMarket() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
-  const createMarket = useCallback(async (question: string, endTime: Date, e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault(); // Prevent form submission
-    }
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const walletClient = await getWalletClient();
-      
-      //get the account from the wallet client
-      let [address] = await walletClient.getAddresses();
 
-      const hash = await walletClient.writeContract({
+  // Now accepts: question, description, category, endDate
+  const createMarket = async (
+    question: string,
+    description: string,
+    category: string,
+    endDate: Date
+  ) => {
+    setIsLoading(true);
+    setIsSuccess(false);
+    setError(null);
+    try {
+      if (!endDate || isNaN(endDate.getTime())) {
+        throw new Error("Invalid end date");
+      }
+      const endTime = Math.floor(endDate.getTime() / 1000);
+      if (!endTime || isNaN(endTime)) {
+        throw new Error("Invalid end time");
+      }
+      const walletClient = await getWalletClient();
+      const [address] = await walletClient.getAddresses();
+      console.log("Creating market with:", { question, description, category, endTime });
+      const  results  = await walletClient.writeContract({
         address: PREDICTION_MARKET_ADDRESS,
         abi: ABI,
         functionName: 'createMarket',
-        args: [question, BigInt(Math.floor(endTime.getTime() / 1000))],
-        account: address as `0x${string}`
+        args: [question, description, category, BigInt(endTime)],
+        account: address as `0x${string}`,
       });
-      
-      let receipt = await publicClient.waitForTransactionReceipt({ hash });
-      console.log("Transaction receipt:", receipt);
+      console.log("results :", results)
+      await publicClient.waitForTransactionReceipt({ hash: results });
       setIsSuccess(true);
+      console.log("Market created successfully");
     } catch (err) {
       console.error("Failed to create market", err);
       setError(new Error("Error creating market. Try again later"));
-      setIsSuccess(false);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
   
   return { createMarket, isLoading, isSuccess, error };
 }
@@ -287,23 +287,16 @@ export function useClaimWinnings() {
   return { claimWinnings, isLoading, isSuccess, error };
 }
 
-
-const getMarkets = async () => {
-  const markets = await publicClient.readContract({
-    address: PREDICTION_MARKET_ADDRESS,
-    abi: ABI,
-    functionName: 'getMarketCount'
-  })
-  return markets
-}
-
-
 export async function getUserPositions(userAddress: string): Promise<Market[]> {
   try {
-    // First get all markets
-    const allMarkets = await getMarkets();
+    const allMarkets = await fetchMarkets();
+    if (!Array.isArray(allMarkets)) {
+      console.error("fetchMarkets did not return an array:", allMarkets);
+      return [];
+    }
     const marketsWithPositions: Market[] = [];
     
+    console.log("allMarkets :", allMarkets)
     // For each market, check if the user has a position
     for (const market of allMarkets) {
       try {

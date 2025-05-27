@@ -29,6 +29,7 @@ export function MarketsList({
             yesAmount: market.userYesAmount || 0n,
             noAmount: market.userNoAmount || 0n,
           };
+          console.log("user market", userPosition)
         return (
           <Link to={`/market/${market.id}`} key={market.id} className="block">
             <MarketCard
