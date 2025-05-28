@@ -66,9 +66,9 @@ export function MarketCard({
   const noProbability = totalPool > 0 ? (Number(noPool) / totalPool) * 100 : 50;
 
   return (
-    <div className="bg-[#2c3e50] rounded-xl shadow-2xl border border-white p-6 flex flex-col gap-4">
+    <div className="bg-[#2C2C3A] text-white border border-[#3A3A4A] rounded-lg p-4 shadow-md transition-transform transform hover:translate-y-[-5px] hover:border-[var(--accent-color)]">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-bold text-white">{market.question}</h3>
+        <h3 className="text-xl font-bold">{market.question}</h3>
         <span className="px-2 py-1 bg-gray-600 text-white text-xs rounded-full">
           {typeof market.endTime === "bigint"
             ? `Ends ${formatDistanceToNow(new Date(Number(market.endTime) * 1000))}`

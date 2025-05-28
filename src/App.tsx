@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useMarkets, useClaimWinnings, getUserPositions, fetchMarkets } from './hooks/useContract';
-import type { Market} from './types';
+import type { Market } from './types';
 // import { MarketCard } from './components/ui/market-card';
 import { CreateMarketDialog } from './components/create-market-dialog';
 import { TakePositionDialog } from './components/take-position-dialog';
 import { ResolveMarketDialog } from './components/resolve-market-dialog';
 import { Button } from './components/ui/button';
-import { LogOut, Copy, Wallet, ChevronDown } from 'lucide-react';
+import { LogOut, Copy, Wallet, ChevronDown, User } from 'lucide-react';
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { UserMarkets } from './pages/UserMarkets';
 import {
@@ -21,6 +21,16 @@ import { UserPositionsSection } from "./components/UserPositionsSection";
 import { AllMarketsSection } from "./components/AllMarketsSection";
 import  AboutPage  from './pages/AboutPage';
 import MarketDetailsPage from './pages/MarketDetailsPage';
+import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import ProfilePage from './pages/ProfilePage';
+import DashboardPage from './pages/DashboardPage';
+import AIPredictionsPage from './pages/AIPredictionsPage';
+import ChallengesPage from './pages/ChallengesPage';
+import MyPoolsPage from './pages/MyPoolsPage';
+import LeaderboardPage from './pages/LeaderboardPage';
+import MyWalletPage from './pages/MyWalletPage';
+import SupportPage from './pages/SupportPage';
 
 function App() {
   const { address, isConnected, connect, disconnect } = useAccount();
@@ -122,7 +132,6 @@ function App() {
     claimWinnings(marketId);
   };
 
-  const navigate = useNavigate();
 
   const now = Date.now();
   const activeMarkets = markets.filter(
@@ -142,149 +151,21 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-card shadow">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="text-xl font-bold text-white">
-            <Link to="/">PredictSomnia</Link>
-          </div>
-          <div className="flex-1 flex justify-center">
-            <input
-              type="text"
-              placeholder="Search markets..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-4 mr-4">
-              <Link to="/all-markets" className="text-muted-foreground text-white hover:text-foreground">
-                All Markets
-              </Link>
-              <Link to="/my-markets" className="text-muted-foreground text-white hover:text-foreground">
-                My Markets
-              </Link>
-            </nav>
-            {isConnected && (
-              <CreateMarketDialog onMarketCreated={refreshMarkets} />
-            )}
-            
-            <DropdownMenu classname="text-white">
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gray-800 text-white">
-                  <Wallet size={16} />
-                  <span>Wallet</span>
-                  <ChevronDown size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 text-white bg-gray-800">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Address</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={copyToClipboard}
-                      className="h-8 px-2"
-                    >
-                      <Copy size={14} />
-                    </Button>
-                  </div>
-                  <div className="text-sm text-gray-500 truncate">
-                    
-                    {/* displa the shortened address */}
-                    {address?.slice(0, 14)}...{address?.slice(-4)}
-                  </div>
-                  {copied && (
-                    <span className="text-xs text-green-500 mt-1">Copied to clipboard!</span>
-                  )}
-                </div>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-2">
-                  <div className="text-sm font-medium">Balance</div>
-                  <div className="text-sm text-gray-500">
-                    {balance} SOM
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={disconnect} className="text-red-500 cursor-pointer">
-                  <LogOut size={16} className="mr-2" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* <CreateMarketDialog onMarketCreated={refreshMarkets} /> */}
-          </div>
-        </div>
-      </header>
-
-      <div className="bg-background border-b border-border">
-        <div className="container mx-auto px-4 py-2 flex gap-2 overflow-x-auto justify-center">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition
-                ${selectedCategory === cat
-                  ? "bg-primary text-white"
-                  : "bg-muted text-foreground hover:bg-primary/10"}
-              `}
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <div className="container mx-auto px-4 py-8">
-              <AllMarketsSection
-                markets={filteredMarkets}
-                onTakePosition={handleTakePosition}
-                onResolve={handleResolve}
-                onClaim={handleClaim}
-                address={address}
-              />
-            </div>
-          }
-        />
-        
-        <Route
-          path="/all-markets"
-          element={
-            <div className="container mx-auto px-4 py-8">
-              {/* <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Prediction Markets</h1> */}
-              
-              {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-                </div>
-              ) : filteredMarkets.length === 0 ? (
-                <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
-                  <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No prediction markets found</h3>
-                  <p className="mt-2 text-gray-500 dark:text-gray-400">Create the first market to get started!</p>
-                  <div className="mt-6">
-                    <CreateMarketDialog onMarketCreated={refreshMarkets} />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  <UserPositionsSection
-                    userPositions={userPositions}
-                    onTakePosition={handleTakePosition}
-                    onResolve={handleResolve}
-                    onClaim={handleClaim}
-                    address={address}
-                  />
+      <Navbar
+        balance={balance}
+        copied={copied}
+        copyToClipboard={copyToClipboard}
+        disconnect={disconnect}
+        refreshMarkets={refreshMarkets}
+      />
+      <div className="flex">
+        <Sidebar />
+        <div className="flex-1 ml-64">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div className="container mx-auto px-4 py-8">
                   <AllMarketsSection
                     markets={filteredMarkets}
                     onTakePosition={handleTakePosition}
@@ -293,43 +174,95 @@ function App() {
                     address={address}
                   />
                 </div>
-              )}
-            </div>
-          }
-        />
-        
-        <Route
-          path="/my-markets"
-          element={
-            <UserMarkets
-              address={address}
-              onTakePosition={handleTakePosition}
-              onResolve={handleResolve}
-              onClaim={handleClaim}
+              }
             />
-          }
-        />
-        
-        <Route path="/market/:id" element={<MarketDetailsPage />} />
-        
-        <Route path="/about" element={<AboutPage />} />
-      </Routes>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/ai-predictions" element={<AIPredictionsPage />} />
+            <Route path="/challenges" element={<ChallengesPage />} />
+            <Route path="/my-pools" element={<MyPoolsPage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/my-wallet" element={<MyWalletPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route
+              path="/all-markets"
+              element={
+                <div className="container mx-auto px-4 py-8">
+                  {/* <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Prediction Markets</h1> */}
+                  
+                  {isLoading ? (
+                    <div className="flex justify-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                    </div>
+                  ) : filteredMarkets.length === 0 ? (
+                    <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
+                      <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No prediction markets found</h3>
+                      <p className="mt-2 text-gray-500 dark:text-gray-400">Create the first market to get started!</p>
+                      <div className="mt-6">
+                        <CreateMarketDialog onMarketCreated={refreshMarkets} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                      <UserPositionsSection
+                        userPositions={userPositions}
+                        onTakePosition={handleTakePosition}
+                        onResolve={handleResolve}
+                        onClaim={handleClaim}
+                        address={address}
+                      />
+                      <AllMarketsSection
+                        markets={filteredMarkets}
+                        onTakePosition={handleTakePosition}
+                        onResolve={handleResolve}
+                        onClaim={handleClaim}
+                        address={address}
+                      />
+                    </div>
+                  )}
+                </div>
+              }
+            />
+            
+            <Route
+              path="/my-markets"
+              element={
+                <UserMarkets
+                  address={address}
+                  onTakePosition={handleTakePosition}
+                  onResolve={handleResolve}
+                  onClaim={handleClaim}
+                />
+              }
+            />
+            
+            <Route path="/market/:id" element={<MarketDetailsPage />} />
+            
+            <Route path="/about" element={<AboutPage />} />
+            
+            <Route path="/profile" element={<ProfilePage />} />
+          </Routes>
 
-      {selectedMarket !== null && (
-        <>
-          <TakePositionDialog
-            marketId={selectedMarket}
-            isYes={isYes}
-            open={openPositionDialog}
-            onOpenChange={setOpenPositionDialog}
-          />
-          <ResolveMarketDialog
-            marketId={selectedMarket}
-            open={openResolveDialog}
-            onOpenChange={setOpenResolveDialog}
-          />
-        </>
-      )}
+          {selectedMarket !== null && (
+            <>
+              <TakePositionDialog
+                marketId={selectedMarket}
+                isYes={isYes}
+                open={openPositionDialog}
+                onOpenChange={setOpenPositionDialog}
+              />
+              <ResolveMarketDialog
+                marketId={selectedMarket}
+                open={openResolveDialog}
+                onOpenChange={setOpenResolveDialog}
+              />
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

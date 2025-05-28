@@ -31,6 +31,11 @@
     --ring: 173 80% 40%;
 
     --radius: 0.5rem;
+
+    --background-color: #1E1E2D;
+    --sidebar-color: #252836;
+    --text-color: #FFFFFF;
+    --accent-color: #FF8C00;
   }
 
   .dark {
@@ -69,7 +74,22 @@
     border-color: hsl(var(--border));
   }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+  }
+
+  a {
+    color: var(--text-color);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--accent-color);
+  }
+
+  input, button {
+    font-family: inherit;
   }
 }
