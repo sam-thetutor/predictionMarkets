@@ -47,7 +47,7 @@ export function CreateMarketDialog({ onMarketCreated }: CreateMarketDialogProps 
     }
   }, [isSuccess, open, onMarketCreated]);
   
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e:any) => {
     e.preventDefault();
     if (question && description && endDate) {
       await createMarket(question, description, category, new Date(endDate));

@@ -93,3 +93,13 @@
     font-family: inherit;
   }
 }
+
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 16;
+  }
+}

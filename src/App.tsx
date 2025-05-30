@@ -1,22 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useMarkets, useClaimWinnings, getUserPositions, fetchMarkets } from './hooks/useContract';
+import { useAccount, useMarkets, useClaimWinnings, getUserPositions } from './hooks/useContract';
 import type { Market } from './types';
 // import { MarketCard } from './components/ui/market-card';
 import { CreateMarketDialog } from './components/create-market-dialog';
 import { TakePositionDialog } from './components/take-position-dialog';
 import { ResolveMarketDialog } from './components/resolve-market-dialog';
-import { Button } from './components/ui/button';
-import { LogOut, Copy, Wallet, ChevronDown, User } from 'lucide-react';
-import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { UserMarkets } from './pages/UserMarkets';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./components/ui/dropdown-menu";
+
 import { UserPositionsSection } from "./components/UserPositionsSection";
 import { AllMarketsSection } from "./components/AllMarketsSection";
 import  AboutPage  from './pages/AboutPage';
@@ -33,9 +24,8 @@ import MyWalletPage from './pages/MyWalletPage';
 import SupportPage from './pages/SupportPage';
 
 function App() {
-  const { address, isConnected, connect, disconnect } = useAccount();
-  const { markets, isLoading, error, refresh } = useMarkets();
-  const [loading, setLoading] = useState(true);
+  const { address, isConnected, disconnect } = useAccount();
+  const { markets, isLoading, refresh } = useMarkets();
   const [selectedMarket, setSelectedMarket] = useState<number | null>(null);
   const [isYes, setIsYes] = useState(false);
   const [openPositionDialog, setOpenPositionDialog] = useState(false);
@@ -46,13 +36,13 @@ function App() {
   
   const { claimWinnings } = useClaimWinnings();
 
-  const categories = ["All", "Politics", "Sports", "Health", "Science"];
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  // const categories = ["All", "Politics", "Sports", "Health", "Science"];
+  const [selectedCategory] = useState("All");
 
   const [searchTerm, setSearchTerm] = useState("");
 
+
   const refreshMarkets = useCallback(async () => {
-    setLoading(true);
     try {
       await refresh();
       if (address) {
@@ -61,9 +51,7 @@ function App() {
       }
     } catch (error) {
       console.error("Failed to fetch markets:", error);
-    } finally {
-      setLoading(false);
-    }
+    } 
   }, [refresh, address]);
 
   // useEffect(() => {
@@ -132,6 +120,9 @@ function App() {
     claimWinnings(marketId);
   };
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+  };
 
   const now = Date.now();
   const activeMarkets = markets.filter(
@@ -157,6 +148,7 @@ function App() {
         copyToClipboard={copyToClipboard}
         disconnect={disconnect}
         refreshMarkets={refreshMarkets}
+        onSearch={handleSearch}
       />
       <div className="flex">
         <Sidebar />

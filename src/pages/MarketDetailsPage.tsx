@@ -1,20 +1,18 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { fetchMarkets, useMarkets, getUserPositions } from "../hooks/useContract";
-import { MarketCard } from "../components/ui/market-card";
+import { useMarkets, getUserPositions } from "../hooks/useContract";
 import { TakePositionDialog } from "../components/take-position-dialog";
-import type { Market } from "../types";
+import type { Market,  } from "../types";
 import { useAccount } from "../hooks/useContract";
 
 export default function MarketDetailsPage() {
   const { id } = useParams();
-  const { markets, isLoading, refresh } = useMarkets();
+  const { markets, isLoading } = useMarkets();
   const { address, isConnected } = useAccount();
 
   const [market, setMarket] = useState<Market | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [isYes, setIsYes] = useState(true);
-  const [loading, setLoading] = useState(true);
   const [userPosition, setUserPosition] = useState<{ yesAmount: bigint, noAmount: bigint }>({ yesAmount: 0n, noAmount: 0n });
   const [comments, setComments] = useState<{ address: string, text: string }[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -25,15 +23,13 @@ export default function MarketDetailsPage() {
   }, [id, markets, isConnected, address]);
 
   const fetchMarket = async () => {
-    setLoading(true);
-    const found = markets.find((m) => m.id === Number(id));
+    const found = markets.find((m: Market) => m.id === Number(id));
     setMarket(found || null);
-    setLoading(false);
     // Fetch user position for this market if user is connected
     if (found && isConnected && address) {
       try {
         const positions = await getUserPositions(address);
-        const userMarket = positions.find((m) => m.id === Number(id));
+        const userMarket = positions.find((m : any) => m.id === Number(id));
         setUserPosition({
           yesAmount: userMarket?.userYesAmount ?? 0n,
           noAmount: userMarket?.userNoAmount ?? 0n,
@@ -96,7 +92,7 @@ export default function MarketDetailsPage() {
                   {(
                     (Number(market.totalYesAmount ?? 0n) + Number(market.totalNoAmount ?? 0n)) /
                     1e18
-                  ).toLocaleString(undefined, { maximumFractionDigits: 4 })} SOM
+                  ).toLocaleString(undefined, { maximumFractionDigits: 4 })} STT
                 </span>
               </div>
               <div className="text-gray-500 dark:text-gray-400 text-sm">
@@ -138,13 +134,13 @@ export default function MarketDetailsPage() {
                       {estYes > 0 && (
                         <div>
                           <span className="font-semibold text-green-300">YES: </span>
-                          {(estYes / 1e18).toLocaleString(undefined, { maximumFractionDigits: 4 })} SOM
+                          {(estYes / 1e18).toLocaleString(undefined, { maximumFractionDigits: 4 })} STT
                         </div>
                       )}
                       {estNo > 0 && (
                         <div>
                           <span className="font-semibold text-red-300">NO: </span>
-                          {(estNo / 1e18).toLocaleString(undefined, { maximumFractionDigits: 4 })} SOM
+                          {(estNo / 1e18).toLocaleString(undefined, { maximumFractionDigits: 4 })} STT
                         </div>
                       )}
                     </div>
@@ -197,9 +193,9 @@ export default function MarketDetailsPage() {
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Top Holders</h3>
               {/* Placeholder for top holders */}
               <ul className="list-disc list-inside text-gray-700 dark:text-gray-200">
-                <li>User1: 1000 SOM</li>
-                <li>User2: 800 SOM</li>
-                <li>User3: 600 SOM</li>
+                <li>User1: 1000 STT</li>
+                <li>User2: 800 STT</li>
+                <li>User3: 600 STT</li>
               </ul>
             </div>
           )}

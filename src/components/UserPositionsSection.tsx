@@ -1,4 +1,4 @@
-import type { Market, UserPosition } from "../types";
+import type { Market } from "../types";
 import { MarketsList } from "./MarketsList";
 
 interface UserPositionsSectionProps {

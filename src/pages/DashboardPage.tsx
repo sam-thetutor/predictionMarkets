@@ -34,7 +34,7 @@ const DashboardPage: React.FC = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredMarkets.map(market => (
-          <MarketCard key={market.id} market={market} userPosition={null} onTakePosition={() => {}} onResolve={() => {}} onClaim={() => {}} isCreator={false} />
+          <MarketCard key={market.id} market={market as any} userPosition={undefined} onTakePosition={() => {}} onResolve={() => {}} onClaim={() => {}} isCreator={false} />
         ))}
       </div>
     </div>

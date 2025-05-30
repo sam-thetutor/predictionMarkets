@@ -5,7 +5,7 @@ export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const [username, setUsername] = useState('');
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [totalSOM, setTotalSOM] = useState('0');
+  // const [totalSOM, setTotalSOM] = useState('0');
   const [analytics, setAnalytics] = useState({
     created: 0,
     participated: 0,
@@ -20,7 +20,6 @@ export default function ProfilePage() {
       const fetchAnalytics = async () => {
         try {
           // Replace with actual logic to fetch total SOM and analytics
-          setTotalSOM('1,250.00');
           setAnalytics({
             created: 5,
             participated: 20,

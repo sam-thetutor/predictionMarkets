@@ -1,13 +1,11 @@
-import { useState } from 'react';
 import { Button } from "./button";
 import { formatDistanceToNow } from "date-fns";
 import type { Market, UserPosition } from "../../types";
-import { formatEther } from "viem";
 
 interface MarketCardProps {
   market: Market;
-  userPosition: UserPosition;
-  onTakePosition: (marketId: number, isYes: boolean) => void;
+  userPosition?: UserPosition;
+  onTakePosition: (marketId:number, isYes: boolean) => void;
   onResolve: (marketId: number) => void;
   onClaim: (marketId: number) => void;
   isCreator: boolean;
@@ -21,12 +19,17 @@ export function MarketCard({
   onClaim,
   isCreator,
 }: MarketCardProps) {
-  const [showDetails, setShowDetails] = useState(false);
   
   // Safely convert the endTime to a valid date
   let endTimeMs;
   let endDate;
   let timeRemaining;
+
+  console.log("market", userPosition,
+    onTakePosition,
+    onResolve,
+    onClaim,
+    isCreator,timeRemaining)
   
   try {
     // Ensure we're working with a number and it's valid
@@ -54,16 +57,16 @@ export function MarketCard({
     timeRemaining = 'Unknown';
   }
   
-  const isEnded = Date.now() > endTimeMs;
-  const isResolved = market.resolved;
+  // const isEnded = Date.now() > endTimeMs;
+  // const isResolved = market.resolved;
   
   // Calculate probabilities
   const yesPool = typeof market.totalYesAmount === 'bigint' ? market.totalYesAmount : BigInt(market.totalYesAmount || 0);
   const noPool = typeof market.totalNoAmount === 'bigint' ? market.totalNoAmount : BigInt(market.totalNoAmount || 0);
   
   const totalPool = Number(yesPool) + Number(noPool);
-  const yesProbability = totalPool > 0 ? (Number(yesPool) / totalPool) * 100 : 50;
-  const noProbability = totalPool > 0 ? (Number(noPool) / totalPool) * 100 : 50;
+  // const yesProbability = totalPool > 0 ? (Number(yesPool) / totalPool) * 100 : 50;
+  //   const noProbability = totalPool > 0 ? (Number(noPool) / totalPool) * 100 : 50;
 
   return (
     <div className="bg-[#2C2C3A] text-white border border-[#3A3A4A] rounded-lg p-4 shadow-md transition-transform transform hover:translate-y-[-5px] hover:border-[var(--accent-color)]">
@@ -80,20 +83,20 @@ export function MarketCard({
         Category: <span className="font-semibold">{market.category}</span>
       </div> */}
       <div className="text-sm text-gray-400 mb-4">
-        Total pool: {totalPool ? totalPool/1e18 : "0"} SOM
+        Total pool: {totalPool ? totalPool/1e18 : "0"} STT
       </div>
       <div className="flex gap-2">
         <Button
           variant="outline"
           className="w-1/2 bg-green-300 text-white cursor-pointer"
-          onClick={() => onTakePosition(true)}
+          onClick={() => onTakePosition(market.id, true)}
         >
           YES
         </Button>
         <Button
           variant="outline"
           className="w-1/2 bg-red-300 text-white cursor-pointer"
-          onClick={() => onTakePosition(false)}
+          onClick={() => onTakePosition(market.id, false)}
         >
           NO
         </Button>

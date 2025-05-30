@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Copy, Wallet, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
@@ -18,6 +18,7 @@ interface NavbarProps {
   copyToClipboard: () => void;
   disconnect: () => void;
   refreshMarkets: () => void;
+  onSearch: (searchTerm: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,8 +27,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   copyToClipboard,
   disconnect,
   refreshMarkets,
+  onSearch,
 }) => {
   const { address, isConnected } = useAccount();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    onSearch(value);
+  };
 
   return (
     <header className="bg-[var(--background-color)] shadow w-full">
@@ -35,6 +44,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex-1 flex justify-center">
           <input
             type="text"
+            value={searchTerm}
+            onChange={handleSearchChange}
             placeholder="Search markets..."
             className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
           />
@@ -54,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </Button>
           )}
           
-          <DropdownMenu classname="text-white">
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gray-800 text-white">
                 <Wallet size={16} />

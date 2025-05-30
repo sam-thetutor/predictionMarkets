@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
-import { parseEther, formatEther } from 'viem';
+import { parseEther } from 'viem';
 import { PREDICTION_MARKET_ADDRESS, getWalletClient, publicClient } from '../lib/web3';
-import type { Market, UserPosition } from '../types';
+import type { Market } from '../types';
 import ABI from '../../contracts/contract.json';
 
 // At the top of your file, outside the hook
@@ -16,7 +16,7 @@ export async function fetchMarkets(): Promise<Market[]> {
     if (marketCount === 0) return [];
     const markets: Market[] = [];
     for (let i = 0; i < marketCount; i++) {
-      let market = await publicClient.readContract({
+      let market:any = await publicClient.readContract({
         address: PREDICTION_MARKET_ADDRESS,
         abi: ABI,
         functionName: 'getMarket',
@@ -231,16 +231,20 @@ export function useResolveMarket() {
     setError(null);
     
     try {
-      const walletClient = await getWalletClient();
+
       
-      const { hash } = await walletClient.writeContract({
+      const walletClient = await getWalletClient();
+      let [address] = await walletClient.getAddresses();
+      
+      const  hash  = await walletClient.writeContract({
         address: PREDICTION_MARKET_ADDRESS,
         abi: ABI,
         functionName: 'resolveMarket',
-        args: [BigInt(marketId), outcome]
+        args: [BigInt(marketId), outcome],
+        account: address as `0x${string}`
       });
       
-      await publicClient.waitForTransactionReceipt({ hash });
+      await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to resolve market", err);
@@ -265,15 +269,17 @@ export function useClaimWinnings() {
     
     try {
       const walletClient = await getWalletClient();
+      let [address] = await walletClient.getAddresses();
       
-      const { hash } = await walletClient.writeContract({
+      const  hash  = await walletClient.writeContract({
         address: PREDICTION_MARKET_ADDRESS,
         abi: ABI,
         functionName: 'claimWinnings',
-        args: [BigInt(marketId)]
+        args: [BigInt(marketId)],
+        account: address as `0x${string}`
       });
       
-      await publicClient.waitForTransactionReceipt({ hash });
+      await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
       setIsSuccess(true);
     } catch (err) {
       console.error("Failed to claim winnings", err);

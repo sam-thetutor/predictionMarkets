@@ -12,7 +12,7 @@ interface UserMarketsProps {
 }
 
 export function UserMarkets({ address, onTakePosition, onResolve, onClaim }: UserMarketsProps) {
-  const { getMarkets } = useMarkets();
+  const { markets } = useMarkets();
   const [userMarkets, setUserMarkets] = useState<Market[]>([]);
   const [activeMarkets, setActiveMarkets] = useState<Market[]>([]);
   const [inactiveMarkets, setInactiveMarkets] = useState<Market[]>([]);
@@ -23,8 +23,8 @@ export function UserMarkets({ address, onTakePosition, onResolve, onClaim }: Use
     
     setLoading(true);
     try {
-      const allMarkets = await getMarkets();
-      const userCreatedMarkets = allMarkets.filter(market => 
+      const allMarkets = markets;
+      const userCreatedMarkets = allMarkets.filter((market: Market) => 
         market.creator.toLowerCase() === address.toLowerCase()
       );
       
@@ -32,10 +32,10 @@ export function UserMarkets({ address, onTakePosition, onResolve, onClaim }: Use
       
       // Split markets into active and inactive
       const now = Date.now();
-      const active = userCreatedMarkets.filter(market => 
+      const active = userCreatedMarkets.filter((market: Market) => 
         !market.resolved && Number(market.endTime) * 1000 > now
       );
-      const inactive = userCreatedMarkets.filter(market => 
+      const inactive = userCreatedMarkets.filter((market: Market) => 
         market.resolved || Number(market.endTime) * 1000 <= now
       );
       
@@ -50,7 +50,7 @@ export function UserMarkets({ address, onTakePosition, onResolve, onClaim }: Use
 
   useEffect(() => {
     fetchUserMarkets();
-  }, [address, getMarkets]);
+  }, [address]);
 
   // Create a dummy user position (you'd need to implement actual position fetching)
   const userPosition: UserPosition = {
