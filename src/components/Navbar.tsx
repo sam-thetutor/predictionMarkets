@@ -76,8 +76,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             </Button>
           )}
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {
+            isConnected && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gray-800 text-white">
                 <Wallet size={16} />
                 <span>Wallet</span>
@@ -120,8 +122,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          )
+          }
         </div>
       </div>
     </header>
-  );
+  );  
 };
