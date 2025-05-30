@@ -19,6 +19,7 @@ interface NavbarProps {
   disconnect: () => void;
   refreshMarkets: () => void;
   onSearch: (searchTerm: string) => void;
+  connect: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,6 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   disconnect,
   refreshMarkets,
   onSearch,
+  connect,
 }) => {
   const { address, isConnected } = useAccount();
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +38,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     const value = e.target.value;
     setSearchTerm(value);
     onSearch(value);
+  };
+
+  const handleConnect = () => {
+    console.log("Connecting wallet...");
+    connect();
   };
 
   return (
@@ -59,9 +66,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               My Markets
             </Link>
           </nav>
-          {isConnected && (
+          {isConnected ? (
             <Button onClick={refreshMarkets} className="bg-gray-800 text-white border cursor-pointer border-gray-700">
               Create
+            </Button>
+          ) : (
+            <Button onClick={handleConnect} className="bg-green-300 text-white border cursor-pointer border-green-500">
+              Connect Wallet
             </Button>
           )}
           
@@ -99,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="px-2 py-2">
                 <div className="text-sm font-medium">Balance</div>
                 <div className="text-sm text-gray-500">
-                  {balance} SOM
+                  {balance} STT
                 </div>
               </div>
               <DropdownMenuSeparator />

@@ -24,7 +24,7 @@ import MyWalletPage from './pages/MyWalletPage';
 import SupportPage from './pages/SupportPage';
 
 function App() {
-  const { address, isConnected, disconnect } = useAccount();
+  const { address, isConnected, connect, disconnect } = useAccount();
   const { markets, isLoading, refresh } = useMarkets();
   const [selectedMarket, setSelectedMarket] = useState<number | null>(null);
   const [isYes, setIsYes] = useState(false);
@@ -149,6 +149,7 @@ function App() {
         disconnect={disconnect}
         refreshMarkets={refreshMarkets}
         onSearch={handleSearch}
+        connect={connect}
       />
       <div className="flex">
         <Sidebar />
